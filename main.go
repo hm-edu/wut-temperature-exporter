@@ -45,7 +45,7 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 	snmp.Target = c.Ip
 	snmp.Port = 161
 	snmp.Transport = "udp"
-	snmp.Timeout = 30 * time.Second
+	snmp.Timeout = 3 * time.Second
 	snmp.MaxRepetitions = 50
 	snmp.Retries = 3
 	snmp.OnRetry = func(s *gosnmp.GoSNMP) {
