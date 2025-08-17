@@ -56,6 +56,7 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 
 	data, err := snmp.WalkAll("1.3.6.1.4.1.5040.1.2.6.1.3.1.1")
 	if err != nil {
+		c.Logger.Error("Error walking SNMP data", zap.String("ip", c.Ip), zap.Error(err))
 		return
 	}
 
@@ -140,6 +141,7 @@ func main() {
 		}
 
 		if ip == "" {
+			logger.Error("No target found", zap.String("target", target))
 			http.Error(w, "Not found", 404)
 			return
 		}
