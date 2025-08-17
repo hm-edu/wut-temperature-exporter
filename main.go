@@ -47,6 +47,10 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 	snmp.Transport = "udp"
 	snmp.Timeout = 30 * time.Second
 	snmp.MaxRepetitions = 50
+	snmp.Retries = 3
+	snmp.OnRetry = func(s *gosnmp.GoSNMP) {
+		c.Logger.Warn("SNMP retry", zap.String("ip", c.Ip))
+	}
 	err := snmp.Connect()
 	if err != nil {
 		c.Logger.Error("Error connecting to SNMP target", zap.String("ip", c.Ip), zap.Error(err))
