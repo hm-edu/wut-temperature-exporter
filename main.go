@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,6 +33,7 @@ type Collector struct {
 	Ip        string
 	Community string
 	Room      string
+	Logger    *zap.Logger
 }
 
 // Collect implements prometheus.Collector.
@@ -47,6 +49,7 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 	snmp.MaxRepetitions = 50
 	err := snmp.Connect()
 	if err != nil {
+		c.Logger.Error("Error connecting to SNMP target", zap.String("ip", c.Ip), zap.Error(err))
 		return
 	}
 	defer snmp.Conn.Close()
@@ -141,23 +144,23 @@ func main() {
 			return
 		}
 
-		c := Collector{Ip: ip, Room: room, Community: config.Community}
+		c := Collector{Ip: ip, Room: room, Community: config.Community, Logger: logger}
 		registry.MustRegister(c)
 		h.ServeHTTP(w, r)
 	})
 	server := &http.Server{Addr: ":9191", Handler: nil}
 	go func() {
-		err := server.ListenAndServe()
-		if err != nil {
-			logger.Error("Error starting server", zap.Error(err))
+		listenErr := server.ListenAndServe()
+		if listenErr != nil && !errors.Is(listenErr, http.ErrServerClosed) {
+			logger.Error("Error starting server", zap.Error(listenErr))
 		}
 	}()
 
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	<-interrupt
-	logger.Info("Shutting down server...")
+	sig := <-interrupt
+	logger.Sugar().Infof("Shutting down server. Got signal: %v", sig)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
