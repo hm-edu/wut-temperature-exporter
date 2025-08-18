@@ -63,6 +63,11 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 		c.Logger.Error("Error walking SNMP data", zap.String("ip", c.Ip), zap.Error(err))
 		return
 	}
+	labels, err := snmp.WalkAll("1.3.6.1.4.1.5040.1.2.6.3.2.1.1.1")
+	if err != nil {
+		c.Logger.Error("Error walking SNMP labels", zap.String("ip", c.Ip), zap.Error(err))
+		return
+	}
 
 	for x, p := range data {
 		data := ""
@@ -74,6 +79,14 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 		}
 		if strings.Contains(data, "--") {
 			continue
+		}
+		label := ""
+		snmpLabel := labels[x]
+		switch snmpLabel.Value.(type) {
+		case string:
+			label = snmpLabel.Value.(string)
+		case []uint8:
+			label = string(snmpLabel.Value.([]uint8))
 		}
 
 		data = strings.TrimSpace(strings.ReplaceAll(data, ",", "."))
@@ -90,7 +103,7 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 			nil,
 		), prometheus.GaugeValue,
 			floatValue,
-			strings.ToLower(c.Room), strconv.Itoa(x+1),
+			strings.ToLower(c.Room), label,
 		)
 
 		metrics <- metric
