@@ -60,15 +60,34 @@ func (c Collector) Collect(metrics chan<- prometheus.Metric) {
 
 	data, err := snmp.WalkAll("1.3.6.1.4.1.5040.1.2.6.1.3.1.1")
 	if err != nil {
+		metric := prometheus.MustNewConstMetric(prometheus.NewDesc(
+			"up",
+			"WUT sensor status",
+			[]string{},
+			nil,
+		), prometheus.GaugeValue,
+			0,
+		)
+
+		metrics <- metric
 		c.Logger.Error("Error walking SNMP data", zap.String("ip", c.Ip), zap.Error(err))
 		return
 	}
 	labels, err := snmp.WalkAll("1.3.6.1.4.1.5040.1.2.6.3.2.1.1.1")
 	if err != nil {
+		metric := prometheus.MustNewConstMetric(prometheus.NewDesc(
+			"up",
+			"WUT sensor status",
+			[]string{},
+			nil,
+		), prometheus.GaugeValue,
+			0,
+		)
+
+		metrics <- metric
 		c.Logger.Error("Error walking SNMP labels", zap.String("ip", c.Ip), zap.Error(err))
 		return
 	}
-
 	for x, p := range data {
 		data := ""
 		switch p.Value.(type) {
