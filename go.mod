@@ -3,7 +3,7 @@ module github.com/hm-edu/wut-temperature-exporter
 go 1.26.0
 
 require (
-	github.com/gosnmp/gosnmp v1.46.0
+	github.com/gosnmp/gosnmp v1.47.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.28.0
